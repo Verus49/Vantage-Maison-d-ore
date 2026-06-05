@@ -1,0 +1,6 @@
+{
+  "name": "Maison d'Or Luxury Real Estate Platform",
+  "description": "An ultra-luxury real estate platform showing curated furnished apartments in Vancouver and Toronto, powered by a customized AI Concierge filtering assistant.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

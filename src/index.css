@@ -1,0 +1,50 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Playfair Display", Georgia, serif;
+  --font-sans: "Plus Jakarta Sans", "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  
+  --color-gold-50: #faf6eb;
+  --color-gold-100: #f4e8cb;
+  --color-gold-200: #e9cf94;
+  --color-gold-300: #deb25a;
+  --color-gold-400: #d4952d;
+  --color-gold-500: #D4AF37; /* Immersive UI brand gold */
+  --color-gold-600: #b18520;
+  --color-gold-700: #8a621a;
+  --color-gold-850: rgba(138, 98, 26, 0.4);
+  --color-gold-900: #4e350f;
+  --color-gold-950: #1b1104;
+  
+  --color-zinc-950: #050505;
+  --color-zinc-900: #0a0a0a;
+  --color-zinc-850: #121212;
+  --color-zinc-800: #1a1a1a;
+  --color-zinc-700: #262626;
+}
+
+/* Custom gorgeous gold scrollbar and aesthetic elements */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #040404;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.2);
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 175, 55, 0.45);
+}
+
+/* Luxury grid overlay */
+.bg-grid-pattern {
+  background-size: 60px 60px;
+  background-image: 
+    linear-gradient(to right, rgba(212, 175, 55, 0.02) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(212, 175, 55, 0.02) 1px, transparent 1px);
+}
