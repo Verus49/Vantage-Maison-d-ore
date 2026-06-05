@@ -188,7 +188,12 @@ app.post("/api/concierge", async (req, res) => {
 
 // Setup development or production build
 async function startServer() {
-  if (process.env.NODE_ENV !== "production") {
+  const isProduction = 
+    process.env.NODE_ENV === "production" || 
+    process.env.RENDER === "true" || 
+    (typeof __filename !== "undefined" && __filename.includes("dist"));
+
+  if (!isProduction) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
