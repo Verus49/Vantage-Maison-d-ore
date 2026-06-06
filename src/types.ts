@@ -17,6 +17,7 @@ export interface PropertyListing {
   type: "Condo" | "Penthouse" | "Loft" | "Townhouse";
   furnished: boolean;
   featured?: boolean;
+  nextAvailableDate?: string;
 }
 
 export interface SearchFilters {

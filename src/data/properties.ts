@@ -24,7 +24,8 @@ export const LUXURY_PROPERTIES: PropertyListing[] = [
     amenities: ["Waterfront", "Skyline View", "Private Pool", "Valet Parking", "24/7 Concierge", "Private Wine Cellar", "Steam Room"],
     type: "Penthouse",
     furnished: true,
-    featured: true
+    featured: true,
+    nextAvailableDate: "Immediate"
   },
   {
     id: "vanc-2",
@@ -45,10 +46,11 @@ export const LUXURY_PROPERTIES: PropertyListing[] = [
       "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1200",
       "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=1200"
     ],
-    amenities: ["Waterfront", "Skyline View", "24/7 Concierge", "Gym & Spa Access", "Heated Balcony", "Smart Home Tech"],
+    amenities: ["Waterfront", "Skyline View", "24/7 Concierge", "Gym & Spa Access", "Heated Balcony", "Smart Home Tech", "Private Gym", "Pet Friendly"],
     type: "Condo",
     furnished: true,
-    featured: true
+    featured: true,
+    nextAvailableDate: "August 1, 2026"
   },
   {
     id: "vanc-3",
@@ -72,7 +74,8 @@ export const LUXURY_PROPERTIES: PropertyListing[] = [
     amenities: ["Skyline View", "Double-Height Ceilings", "Private Courtyard", "Valet Parking", "Concierge Service"],
     type: "Loft",
     furnished: true,
-    featured: false
+    featured: false,
+    nextAvailableDate: "Immediate"
   },
   {
     id: "vanc-4",
@@ -93,10 +96,11 @@ export const LUXURY_PROPERTIES: PropertyListing[] = [
       "https://images.unsplash.com/photo-1600585154526-990dced4db0d?q=80&w=1200",
       "https://images.unsplash.com/photo-1600573472591-ee6b68d14c68?q=80&w=1200"
     ],
-    amenities: ["Rooftop Garden", "Private Garage", "Personal Sauna", "Fireplace", "Concierge Service", "Skyline View"],
+    amenities: ["Rooftop Garden", "Private Garage", "Personal Sauna", "Fireplace", "Concierge Service", "Skyline View", "Pet Friendly"],
     type: "Townhouse",
     furnished: true,
-    featured: false
+    featured: false,
+    nextAvailableDate: "July 15, 2026"
   },
   {
     id: "toro-1",
@@ -117,10 +121,11 @@ export const LUXURY_PROPERTIES: PropertyListing[] = [
       "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?q=80&w=1200",
       "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?q=80&w=1200"
     ],
-    amenities: ["Skyline View", "Private Pool", "Valet Parking", "24/7 Concierge", "Integrated Humidification", "Private Wellness Center"],
+    amenities: ["Skyline View", "Private Pool", "Valet Parking", "24/7 Concierge", "Integrated Humidification", "Private Wellness Center", "Private Gym"],
     type: "Penthouse",
     furnished: true,
-    featured: true
+    featured: true,
+    nextAvailableDate: "Immediate"
   },
   {
     id: "toro-2",
@@ -141,10 +146,11 @@ export const LUXURY_PROPERTIES: PropertyListing[] = [
       "https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?q=80&w=1200",
       "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1200"
     ],
-    amenities: ["Skyline View", "Double-Height Ceilings", "Smart Home Tech", "Gym & Pool Facility", "24/7 Security"],
+    amenities: ["Skyline View", "Double-Height Ceilings", "Smart Home Tech", "Gym & Pool Facility", "24/7 Security", "Private Gym"],
     type: "Loft",
     furnished: true,
-    featured: false
+    featured: false,
+    nextAvailableDate: "September 1, 2026"
   },
   {
     id: "toro-3",
@@ -168,7 +174,8 @@ export const LUXURY_PROPERTIES: PropertyListing[] = [
     amenities: ["Waterfront", "Skyline View", "Fireplace", "Heated Balcony", "Valet Parking", "24/7 Concierge"],
     type: "Condo",
     furnished: true,
-    featured: true
+    featured: true,
+    nextAvailableDate: "Immediate"
   },
   {
     id: "toro-4",
@@ -189,10 +196,11 @@ export const LUXURY_PROPERTIES: PropertyListing[] = [
       "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=1200",
       "https://images.unsplash.com/photo-1600585154526-990dced4db0d?q=80&w=1200"
     ],
-    amenities: ["Skyline View", "Exposed Heritage Brick", "Resident Cinema Access", "Smart Home Tech", "Concierge Service"],
+    amenities: ["Skyline View", "Exposed Heritage Brick", "Resident Cinema Access", "Smart Home Tech", "Concierge Service", "Pet Friendly"],
     type: "Townhouse",
     furnished: true,
-    featured: false
+    featured: false,
+    nextAvailableDate: "July 1, 2026"
   }
 ];
 

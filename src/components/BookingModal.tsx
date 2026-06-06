@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { PropertyListing } from "../types";
-import { X, Calendar, Clock, Crown, ShieldAlert, BadgeCheck, Utensils, Plane, ArrowRight, Loader2 } from "lucide-react";
+import { X, Calendar, Clock, Crown, ShieldAlert, BadgeCheck, Utensils, Plane, ArrowRight, Loader2, Share2, FileDown } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { jsPDF } from "jspdf";
 
 interface BookingModalProps {
   property: PropertyListing | null;
@@ -31,8 +32,251 @@ export default function BookingModal({
   const [specialRequests, setSpecialRequests] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [shareStatus, setShareStatus] = useState<string | null>(null);
+  const [pdfStatus, setPdfStatus] = useState<string | null>(null);
 
   if (!isOpen || !property) return null;
+
+  const handleDownloadPDF = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!property) return;
+
+    try {
+      setPdfStatus("Exporting...");
+      const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4"
+      });
+
+      // Color Palette (RGB)
+      const cGold = { r: 212, g: 175, b: 55 };       // #D4AF37
+      const cCharcoal = { r: 15, g: 15, b: 15 };     // #0F0F0F
+      const cGray = { r: 100, g: 100, b: 100 };
+      const cLightBg = { r: 249, g: 249, b: 247 };   // Warm off-white
+
+      // 1. Warm Off-White Background for the entire page
+      doc.setFillColor(cLightBg.r, cLightBg.g, cLightBg.b);
+      doc.rect(0, 0, 210, 297, "F");
+
+      // 2. Gold Top Accent Band
+      doc.setFillColor(cGold.r, cGold.g, cGold.b);
+      doc.rect(0, 0, 210, 8, "F");
+
+      // 3. Thin Gold Border around the page
+      doc.setDrawColor(cGold.r, cGold.g, cGold.b);
+      doc.setLineWidth(0.5);
+      doc.rect(5, 13, 200, 271, "D");
+
+      // 4. Header Section
+      doc.setTextColor(cGold.r, cGold.g, cGold.b);
+      doc.setFont("times", "bold");
+      doc.setFontSize(26);
+      doc.text("MAISON D'OR", 105, 30, { align: "center" });
+
+      doc.setTextColor(cCharcoal.r, cCharcoal.g, cCharcoal.b);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.text("THE FIVE-STAR PORTFOLIO STANDARD  •  EXECUTIVE DISPATCH", 105, 36, { align: "center" });
+
+      // Divider Line
+      doc.setDrawColor(cGold.r, cGold.g, cGold.b);
+      doc.setLineWidth(0.3);
+      doc.line(40, 42, 170, 42);
+
+      // 5. Property Details Header
+      doc.setTextColor(cCharcoal.r, cCharcoal.g, cCharcoal.b);
+      doc.setFont("times", "italic");
+      doc.setFontSize(18);
+      doc.text(property.title, 105, 52, { align: "center" });
+
+      // City & Neighborhood Designation Badge
+      doc.setFillColor(cCharcoal.r, cCharcoal.g, cCharcoal.b);
+      doc.rect(50, 58, 110, 7, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.text(`${property.neighborhood.toUpperCase()}  |  ${property.city.toUpperCase()}`, 105, 63, { align: "center" });
+
+      // 6. Split Content Grid (Metrics on Left, Description on Right)
+      // Left side - Core specifications in an elegant table/box
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(cGold.r, cGold.g, cGold.b);
+      doc.rect(15, 75, 75, 80, "FD");
+
+      doc.setTextColor(cGold.r, cGold.g, cGold.b);
+      doc.setFont("times", "bold");
+      doc.setFontSize(11);
+      doc.text("SUITE SPECS", 52.5, 83, { align: "center" });
+      doc.line(22, 86, 83, 86);
+
+      const specs = [
+        { label: "Design Type", value: property.type },
+        { label: "Bedrooms", value: property.bedrooms.toString() },
+        { label: "Bathrooms", value: property.bathrooms.toString() },
+        { label: "Living Area", value: `${property.sqft.toLocaleString()} sqft` },
+        { label: "Furnishing Status", value: property.furnished ? "Fully Furnished" : "Unfurnished" },
+        { label: "Status Mode", value: property.featured ? "Prestige Collection" : "Standard Collection" }
+      ];
+
+      let yOffset = 94;
+      specs.forEach(spec => {
+        doc.setTextColor(cGray.r, cGray.g, cGray.b);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.text(spec.label.toUpperCase(), 20, yOffset);
+
+        doc.setTextColor(cCharcoal.r, cCharcoal.g, cCharcoal.b);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.text(spec.value, 20, yOffset + 4.5);
+
+        // subtle separation line
+        doc.setDrawColor(235, 235, 235);
+        doc.line(20, yOffset + 7, 85, yOffset + 7);
+        yOffset += 11;
+      });
+
+      // Right side - Curated Description Narrative
+      doc.setTextColor(cGold.r, cGold.g, cGold.b);
+      doc.setFont("times", "bold");
+      doc.setFontSize(11);
+      doc.text("DESIGN ARCHITECT NARRATIVE", 102, 83);
+      doc.line(102, 86, 195, 86);
+
+      doc.setTextColor(cCharcoal.r, cCharcoal.g, cCharcoal.b);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9.5);
+      
+      // Use jspdf splitTextToSize to handle description text wrapping flawlessly!
+      const splitDesc = doc.splitTextToSize(property.description, 93);
+      doc.text(splitDesc, 102, 93, { align: "left", maxWidth: 93, lineHeightFactor: 1.35 });
+
+      // 7. Amenities Checklist Section (Full Width Below)
+      doc.setTextColor(cGold.r, cGold.g, cGold.b);
+      doc.setFont("times", "bold");
+      doc.setFontSize(12);
+      doc.text("EXCLUSIVE BESPOKE AMENITIES", 15, 170);
+      doc.line(15, 173, 195, 173);
+
+      let listY = 181;
+      let listX = 15;
+      property.amenities.forEach((amenity, index) => {
+        // 2-column layout for amenities
+        if (index > 0 && index % 2 === 0) {
+          listY += 8;
+          listX = 15;
+        } else if (index % 2 !== 0) {
+          listX = 110;
+        }
+
+        // tiny golden bullet point box
+        doc.setFillColor(cGold.r, cGold.g, cGold.b);
+        doc.rect(listX, listY - 2.5, 2, 2, "F");
+
+        doc.setTextColor(cCharcoal.r, cCharcoal.g, cCharcoal.b);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.text(amenity, listX + 5, listY);
+      });
+
+      // 8. Lease Investment Box (Stretched container at bottom)
+      doc.setFillColor(cCharcoal.r, cCharcoal.g, cCharcoal.b);
+      doc.rect(15, 222, 180, 24, "F");
+
+      // Little golden vertical line on the left of investment box
+      doc.setFillColor(cGold.r, cGold.g, cGold.b);
+      doc.rect(15, 222, 2, 24, "F");
+
+      doc.setTextColor(180, 180, 180);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.text("MONTHLY TENANCY COMMENCEMENT FEE", 23, 231);
+
+      doc.setTextColor(cGold.r, cGold.g, cGold.b);
+      doc.setFont("times", "bold");
+      doc.setFontSize(20);
+      doc.text(`$${property.price.toLocaleString()} CAD`, 23, 241);
+
+      doc.setTextColor(255, 255, 255);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.5);
+      doc.text("BOARD APPROVAL REQUIRED", 190, 236, { align: "right" });
+
+      doc.setTextColor(150, 150, 150);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+      doc.text("LEDGER COPIED • GUARANTEED LIQUIDITY", 190, 241, { align: "right" });
+
+      // 9. Institutional Disclaimer & Footer
+      doc.setTextColor(cGray.r, cGray.g, cGray.b);
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(7);
+      const disclaimer = "Confidential Brochure issued strictly for private client consumption. Material specifications, design configurations, and furnishing inventories remain subject to final verification and licensing by the Board of Maison d'Or. All transactions conform to luxury asset management mandates of British Columbia and Ontario.";
+      const splitDisclaimer = doc.splitTextToSize(disclaimer, 180);
+      doc.text(splitDisclaimer, 15, 258, { align: "justify" });
+
+      // Signature lines/stamps at the very bottom
+      doc.setDrawColor(220, 220, 220);
+      doc.line(15, 274, 195, 274);
+
+      doc.setTextColor(cGray.r, cGray.g, cGray.b);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(6.5);
+      doc.text("DOCUMENT ID: MDO-GEN-026", 15, 279);
+      doc.text("MAISON D'OR PROPERTY REGISTRY SERVICES", 105, 279, { align: "center" });
+      doc.text("VERIFIED INVENTORIES", 195, 279, { align: "right" });
+
+      // Trigger Save
+      const fileName = `${property.title.toLowerCase().replace(/[^a-z0-9]+/g, "_")}_brochure.pdf`;
+      doc.save(fileName);
+
+      setPdfStatus("Exported!");
+      setTimeout(() => setPdfStatus(null), 3000);
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+      setPdfStatus("Failed");
+      setTimeout(() => setPdfStatus(null), 3000);
+    }
+  };
+
+  const handleShare = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    const shareData = {
+      title: `Maison d'Or: ${property.title}`,
+      text: `Take a look at this stunning fully furnished luxury rental at Maison d'Or: ${property.title} in ${property.neighborhood}.`,
+      url: `${window.location.origin}${window.location.pathname}?suite=${property.id}`
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        setShareStatus("Shared successfully");
+        setTimeout(() => setShareStatus(null), 3000);
+      } catch (err: any) {
+        if (err.name !== "AbortError") {
+          console.error("Web Share failed:", err);
+          // Fallback to copy link
+          copyToClipboard(shareData.url);
+        }
+      }
+    } else {
+      copyToClipboard(shareData.url);
+    }
+  };
+
+  const copyToClipboard = async (url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareStatus("Link copied");
+      setTimeout(() => setShareStatus(null), 3000);
+    } catch {
+      const mailtoUrl = `mailto:?subject=${encodeURIComponent(`Maison d'Or: ${property.title}`)}&body=${encodeURIComponent(`Take a look at this stunning fully furnished luxury rental at Maison d'Or:\n\n${property.title} in ${property.neighborhood}\n\nUrl: ${url}`)}`;
+      window.open(mailtoUrl, "_blank");
+      setShareStatus("Mail opened");
+      setTimeout(() => setShareStatus(null), 3000);
+    }
+  };
 
   const luxuryCustomizations = [
     {
@@ -139,20 +383,54 @@ export default function BookingModal({
               <h2 className="text-xl md:text-2xl font-serif text-zinc-100 pr-8">
                 Request "Maison d'Or" Tenancy
               </h2>
-              <div className="flex items-center gap-2 border border-zinc-900 bg-black/60 px-3 py-2.5 rounded-none mt-3.5">
-                <img
-                  src={property.images[0]}
-                  alt={property.title}
-                  referrerPolicy="no-referrer"
-                  className="w-12 h-12 rounded-none object-cover border border-[#D4AF37]/15 shrink-0"
-                />
-                <div className="min-w-0">
-                  <h4 className="text-xs font-serif font-bold text-zinc-200 truncate">
-                    {property.title}
-                  </h4>
-                  <p className="text-[10px] font-mono text-zinc-500 truncate">
-                    {property.neighborhood} • ${property.price.toLocaleString()}/mo
-                  </p>
+              <div className="flex items-center justify-between gap-3 border border-zinc-900 bg-black/60 px-3 py-2.5 rounded-none mt-3.5">
+                <div className="flex items-center gap-2 min-w-0">
+                  <img
+                    src={property.images[0]}
+                    alt={property.title}
+                    referrerPolicy="no-referrer"
+                    className="w-12 h-12 rounded-none object-cover border border-[#D4AF37]/15 shrink-0"
+                  />
+                  <div className="min-w-0">
+                    <h4 className="text-xs font-serif font-bold text-zinc-200 truncate">
+                      {property.title}
+                    </h4>
+                    <p className="text-[10px] font-mono text-zinc-500 truncate">
+                      {property.neighborhood} • ${property.price.toLocaleString()}/mo
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleShare}
+                    className="px-2.5 py-1.5 border border-[#D4AF37]/25 hover:border-[#D4AF37]/60 text-[#D4AF37] hover:text-white bg-[#020202] hover:bg-[#D4AF37]/10 text-[9px] font-mono uppercase tracking-widest flex items-center gap-1.5 transition-all cursor-pointer relative"
+                    title="Share Suite Details"
+                  >
+                    <Share2 className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Share Suite</span>
+                    {shareStatus && (
+                      <span className="absolute bottom-full right-0 mb-2 bg-black border border-[#D4AF37] text-[#D4AF37] text-[8px] px-2 py-0.5 uppercase tracking-wide whitespace-nowrap">
+                        {shareStatus}
+                      </span>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDownloadPDF}
+                    className="px-2.5 py-1.5 border border-[#D4AF37]/25 hover:border-[#D4AF37]/60 text-[#D4AF37] hover:text-white bg-[#020202] hover:bg-[#D4AF37]/10 text-[9px] font-mono uppercase tracking-widest flex items-center gap-1.5 transition-all cursor-pointer relative"
+                    title="Download Premium PDF Brochure"
+                  >
+                    <FileDown className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Brochure PDF</span>
+                    {pdfStatus && (
+                      <span className="absolute bottom-full right-0 mb-2 bg-black border border-[#D4AF37] text-[#D4AF37] text-[8px] px-2 py-0.5 uppercase tracking-wide whitespace-nowrap">
+                        {pdfStatus}
+                      </span>
+                    )}
+                  </button>
                 </div>
               </div>
             </div>

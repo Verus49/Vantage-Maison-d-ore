@@ -6,7 +6,12 @@ import AIConcierge from "./components/AIConcierge";
 import PropertyCard from "./components/PropertyCard";
 import LuxuryFilters from "./components/LuxuryFilters";
 import BookingModal from "./components/BookingModal";
-import { Compass, Sparkles, Building, Crown, Landmark, UserCheck, CheckCircle2, ChevronRight, MapPin, Eye, Calendar, AlertCircle } from "lucide-react";
+import VirtualTourModal from "./components/VirtualTourModal";
+import CompareModal from "./components/CompareModal";
+import PriceTrendsChart from "./components/PriceTrendsChart";
+import ClientExperiences from "./components/ClientExperiences";
+import { LuxuryGridSkeleton } from "./components/PropertyCardSkeleton";
+import { Compass, Sparkles, Building, Crown, Landmark, UserCheck, CheckCircle2, ChevronRight, MapPin, Eye, Calendar, AlertCircle, Heart, GitCompare, X, Bell, PawPrint, Dumbbell, Anchor } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 export default function App() {
@@ -21,9 +26,168 @@ export default function App() {
     searchQuery: ""
   });
 
+  // Curated Favorites Collection Local States
+  const [favorites, setFavorites] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem("vantage_favorites");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState<boolean>(false);
+
+  // Sync favorites collection to localStorage
+  React.useEffect(() => {
+    try {
+      localStorage.setItem("vantage_favorites", JSON.stringify(favorites));
+    } catch (e) {
+      console.error("Failed persisting curation favorites to partition storage", e);
+    }
+  }, [favorites]);
+
+  const handleToggleFavorite = (propertyId: string) => {
+    setFavorites((prev) => {
+      const isFav = prev.includes(propertyId);
+      if (isFav) {
+        return prev.filter((id) => id !== propertyId);
+      } else {
+        return [...prev, propertyId];
+      }
+    });
+  };
+
   const [selectedProperty, setSelectedProperty] = useState<PropertyListing | null>(null);
   const [bookingProperty, setBookingProperty] = useState<PropertyListing | null>(null);
+  const [virtualTourProperty, setVirtualTourProperty] = useState<PropertyListing | null>(null);
+
+  // Prefill State for direct AI concierge inquiries
+  const [prefilledInquiry, setPrefilledInquiry] = useState<string>("");
+
+  const handlePropertyInquiry = (property: PropertyListing) => {
+    const messageTemplate = `Greetings Concierge. I am deeply interested in securing further material details on the exquisite suite: '${property.title}' in the neighborhood of ${property.neighborhood}, ${property.city}. What are the primary bespoke features and available showing options?`;
+    setPrefilledInquiry(messageTemplate);
+
+    setTimeout(() => {
+      const chatPanel = document.getElementById("ai-concierge-chat-panel");
+      if (chatPanel) {
+        chatPanel.scrollIntoView({ behavior: "smooth", block: "center" });
+        const inputElement = chatPanel.querySelector("input");
+        if (inputElement) {
+          inputElement.focus();
+        }
+      }
+    }, 150);
+  };
+
+  // Premium Alerts Subscription States
+  const [subscriptions, setSubscriptions] = useState<any[]>(() => {
+    try {
+      const saved = localStorage.getItem("maison_subscriptions");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [showAlertsOnly, setShowAlertsOnly] = useState<boolean>(false);
+
+  // Sync subscriptions list to localStorage
+  React.useEffect(() => {
+    try {
+      localStorage.setItem("maison_subscriptions", JSON.stringify(subscriptions));
+    } catch (e) {
+      console.error("Failed persisting alerts list to storage", e);
+    }
+  }, [subscriptions]);
+
+  const handleSubscribeUpdate = (propertyId: string, email: string, priceAlert: boolean, availAlert: boolean) => {
+    setSubscriptions((prev) => {
+      const existingIdx = prev.findIndex((sub) => sub.propertyId === propertyId);
+      const newSub = { propertyId, email, priceAlert, availAlert, timestamp: new Date().toLocaleDateString() };
+      if (existingIdx > -1) {
+        const copy = [...prev];
+        copy[existingIdx] = newSub;
+        return copy;
+      } else {
+        return [...prev, newSub];
+      }
+    });
+
+    const p = LUXURY_PROPERTIES.find((item) => item.id === propertyId);
+    if (p) {
+      setTimeout(() => {
+        setChatHistory((prev) => [
+          ...prev,
+          {
+            id: `alert-reg-${Date.now()}`,
+            sender: "concierge",
+            text: `Priorities registered: Verified secure tracking dispatch for "${p.title}" on email address "${email}". Price drop and availability status shifts have been synced to our live ledger.`,
+            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          }
+        ]);
+      }, 1000);
+    }
+  };
+
+  const handleUnsubscribeUpdate = (propertyId: string) => {
+    setSubscriptions((prev) => prev.filter((sub) => sub.propertyId !== propertyId));
+    const p = LUXURY_PROPERTIES.find((item) => item.id === propertyId);
+    if (p) {
+      setTimeout(() => {
+        setChatHistory((prev) => [
+          ...prev,
+          {
+            id: `alert-unreg-${Date.now()}`,
+            sender: "concierge",
+            text: `Alert monitoring has been terminated for "${p.title}".`,
+            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          }
+        ]);
+      }, 1000);
+    }
+  };
+
+  // Side-by-Side Comparator States
+  const [compareIds, setCompareIds] = useState<string[]>([]);
+  const [isCompareOpen, setIsCompareOpen] = useState<boolean>(false);
+  const [compareWarning, setCompareWarning] = useState<string | null>(null);
+
+  const handleToggleCompare = (id: string) => {
+    setCompareIds((prev) => {
+      const exists = prev.includes(id);
+      if (exists) {
+        return prev.filter((item) => item !== id);
+      } else {
+        if (prev.length >= 3) {
+          setCompareWarning("You can select up to a maximum of 3 luxury properties to compare side-by-side simultaneously.");
+          setTimeout(() => setCompareWarning(null), 5500);
+          return prev;
+        }
+        return [...prev, id];
+      }
+    });
+  };
+
+  const handleRemoveFromCompare = (id: string) => {
+    setCompareIds((prev) => prev.filter((item) => item !== id));
+  };
+
+  // Memoized array of compared properties
+  const comparedPropertiesList = useMemo(() => {
+    return LUXURY_PROPERTIES.filter((p) => compareIds.includes(p.id));
+  }, [compareIds]);
   const [activeMapCity, setActiveMapCity] = useState<"Vancouver" | "Toronto">("Vancouver");
+  const [isUpdatingPortfolio, setIsUpdatingPortfolio] = useState(false);
+
+  React.useEffect(() => {
+    setIsUpdatingPortfolio(true);
+    const timer = setTimeout(() => {
+      setIsUpdatingPortfolio(false);
+    }, 650);
+    return () => clearTimeout(timer);
+  }, [filters, showFavoritesOnly, showAlertsOnly]);
   
   // Real-time Booking / Applications Storage
   const [applications, setApplications] = useState<BookingApplication[]>([]);
@@ -48,6 +212,14 @@ export default function App() {
   // Combined Filters Logic
   const filteredProperties = useMemo(() => {
     return LUXURY_PROPERTIES.filter((p) => {
+      // Favorites filtering
+      if (showFavoritesOnly && !favorites.includes(p.id)) {
+        return false;
+      }
+      // Active Alerts monitoring filter
+      if (showAlertsOnly && !subscriptions.some((sub) => sub.propertyId === p.id)) {
+        return false;
+      }
       // City checking
       if (filters.city !== "all" && p.city !== filters.city) {
         return false;
@@ -83,7 +255,7 @@ export default function App() {
       }
       return true;
     });
-  }, [filters]);
+  }, [filters, showFavoritesOnly, showAlertsOnly, favorites, subscriptions]);
 
   const handleApplyAIFilters = (aiFilters: Partial<SearchFilters>) => {
     setFilters((prev) => {
@@ -148,6 +320,8 @@ export default function App() {
       amenities: [],
       searchQuery: ""
     });
+    setShowFavoritesOnly(false);
+    setShowAlertsOnly(false);
   };
 
   // Locate the property pin and center onto map coordinates
@@ -186,33 +360,65 @@ export default function App() {
           <nav className="hidden md:flex gap-12 text-[11px] uppercase tracking-widest text-white/70 font-medium">
             <span
               onClick={() => {
+                setShowFavoritesOnly(false);
+                setShowAlertsOnly(false);
                 setFilters((prev) => ({ ...prev, city: "all" }));
               }}
               className={`hover:text-[#D4AF37] transition-all cursor-pointer ${
-                filters.city === "all" ? "text-[#D4AF37] font-bold border-b border-[#D4AF37]/55 pb-1" : ""
+                !showFavoritesOnly && !showAlertsOnly && filters.city === "all" ? "text-[#D4AF37] font-bold border-b border-[#D4AF37]/55 pb-1" : ""
               }`}
             >
               Collections
             </span>
             <span
               onClick={() => {
+                setShowFavoritesOnly(false);
+                setShowAlertsOnly(false);
                 setFilters((prev) => ({ ...prev, city: "Vancouver" }));
               }}
               className={`hover:text-[#D4AF37] transition-all cursor-pointer ${
-                filters.city === "Vancouver" ? "text-[#D4AF37] font-bold border-b border-[#D4AF37]/55 pb-1" : ""
+                !showFavoritesOnly && !showAlertsOnly && filters.city === "Vancouver" ? "text-[#D4AF37] font-bold border-b border-[#D4AF37]/55 pb-1" : ""
               }`}
             >
               Vancouver
             </span>
             <span
               onClick={() => {
+                setShowFavoritesOnly(false);
+                setShowAlertsOnly(false);
                 setFilters((prev) => ({ ...prev, city: "Toronto" }));
               }}
               className={`hover:text-[#D4AF37] transition-all cursor-pointer ${
-                filters.city === "Toronto" ? "text-[#D4AF37] font-bold border-b border-[#D4AF37]/55 pb-1" : ""
+                !showFavoritesOnly && !showAlertsOnly && filters.city === "Toronto" ? "text-[#D4AF37] font-bold border-b border-[#D4AF37]/55 pb-1" : ""
               }`}
             >
               Toronto
+            </span>
+            <span
+              onClick={() => {
+                setShowFavoritesOnly(true);
+                setShowAlertsOnly(false);
+              }}
+              className={`hover:text-[#D4AF37] transition-all cursor-pointer flex items-center gap-1.5 ${
+                showFavoritesOnly ? "text-[#D4AF37] font-bold border-b border-[#D4AF37]/55 pb-1" : ""
+              }`}
+              title="Filter exclusively by your favorited luxury curations"
+            >
+              <Heart className={`w-3.5 h-3.5 transition-transform ${favorites.length > 0 ? "fill-[#D4AF37] text-[#D4AF37] scale-110" : "text-zinc-500"}`} />
+              <span>Favorites ({favorites.length})</span>
+            </span>
+            <span
+              onClick={() => {
+                setShowFavoritesOnly(false);
+                setShowAlertsOnly(true);
+              }}
+              className={`hover:text-[#D4AF37] transition-all cursor-pointer flex items-center gap-1.5 ${
+                showAlertsOnly ? "text-[#D4AF37] font-bold border-b border-[#D4AF37]/55 pb-1" : ""
+              }`}
+              title="Filter exclusively by suites with active notification watches"
+            >
+              <Bell className={`w-3.5 h-3.5 transition-transform ${subscriptions.length > 0 ? "fill-[#D4AF37] text-[#D4AF37] scale-110 animate-bounce" : "text-zinc-500"}`} />
+              <span>Alerts ({subscriptions.length})</span>
             </span>
           </nav>
 
@@ -318,7 +524,7 @@ export default function App() {
           </div>
 
           {/* AI Rental Concierge Chat Box panel */}
-          <div className="space-y-3.5">
+          <div id="ai-concierge-chat-panel" className="space-y-3.5">
             <div className="px-1">
               <h3 className="text-sm font-serif font-bold uppercase text-zinc-100 tracking-wide">
                 Direct Client Communication
@@ -332,6 +538,8 @@ export default function App() {
               onApplyFilters={handleApplyAIFilters}
               chatHistory={chatHistory}
               setChatHistory={setChatHistory}
+              prefilledInput={prefilledInquiry}
+              onClearPrefill={() => setPrefilledInquiry("")}
             />
           </div>
         </section>
@@ -409,14 +617,133 @@ export default function App() {
             setFilters={setFilters}
             onReset={resetAllFilters}
             resultCount={filteredProperties.length}
+            showFavoritesOnly={showFavoritesOnly}
+            setShowFavoritesOnly={setShowFavoritesOnly}
+            favoritesCount={favorites.length}
           />
         </section>
 
         {/* Curated Listings Grid */}
         <section className="space-y-5">
+          {/* Quick Portfolio Filter Chips Row */}
+          <div className="bg-[#040404] border border-zinc-900/70 p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 select-none">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
+              <div className="space-y-0.5">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-[#D4AF37] font-semibold">Quick Curations</span>
+                <p className="text-[9px] font-mono text-zinc-500 leading-none">Instant one-tap filtering of luxury specs</p>
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap gap-2 items-center">
+              {[
+                {
+                  id: "pet-friendly",
+                  label: "Pet Friendly",
+                  icon: PawPrint,
+                  isActive: filters.amenities.includes("Pet Friendly"),
+                  toggle: () => {
+                    setFilters((prev) => ({
+                      ...prev,
+                      amenities: prev.amenities.includes("Pet Friendly")
+                        ? prev.amenities.filter((a) => a !== "Pet Friendly")
+                        : [...prev.amenities, "Pet Friendly"]
+                    }));
+                  }
+                },
+                {
+                  id: "harbour-view",
+                  label: "Harbour View",
+                  icon: Anchor,
+                  isActive: filters.searchQuery.toLowerCase().trim() === "harbour",
+                  toggle: () => {
+                    setFilters((prev) => ({
+                      ...prev,
+                      searchQuery: prev.searchQuery.toLowerCase().trim() === "harbour" ? "" : "Harbour"
+                    }));
+                  }
+                },
+                {
+                  id: "private-gym",
+                  label: "Private Gym",
+                  icon: Dumbbell,
+                  isActive: filters.amenities.includes("Private Gym"),
+                  toggle: () => {
+                    setFilters((prev) => ({
+                      ...prev,
+                      amenities: prev.amenities.includes("Private Gym")
+                        ? prev.amenities.filter((a) => a !== "Private Gym")
+                        : [...prev.amenities, "Private Gym"]
+                    }));
+                  }
+                },
+                {
+                  id: "penthouse",
+                  label: "Penthouse",
+                  icon: Crown,
+                  isActive: filters.type === "Penthouse",
+                  toggle: () => {
+                    setFilters((prev) => ({
+                      ...prev,
+                      type: prev.type === "Penthouse" ? "all" : "Penthouse"
+                    }));
+                  }
+                }
+              ].map((chip) => {
+                const IconComponent = chip.icon;
+                return (
+                  <button
+                    key={chip.id}
+                    type="button"
+                    onClick={chip.toggle}
+                    className={`flex items-center gap-2 rounded-none px-3.5 py-1.5 text-xs font-mono transition-all duration-300 pointer-events-auto cursor-pointer border ${
+                      chip.isActive
+                        ? "bg-[#D4AF37] text-black border-[#D4AF37] font-medium shadow-[0_0_15px_rgba(212,175,55,0.25)]"
+                        : "bg-black text-zinc-400 border-zinc-900 hover:border-[#D4AF37]/50 hover:text-white"
+                    }`}
+                  >
+                    <IconComponent className={`w-3.5 h-3.5 shrink-0 ${chip.isActive ? "text-black" : "text-[#D4AF37]"}`} />
+                    <span>{chip.label}</span>
+                    {chip.isActive && (
+                      <span className="w-1.5 h-1.5 bg-black rounded-full shrink-0" />
+                    )}
+                  </button>
+                );
+              })}
+
+              {(filters.amenities.includes("Pet Friendly") || 
+                filters.amenities.includes("Private Gym") || 
+                filters.searchQuery.toLowerCase().trim() === "harbour" || 
+                filters.type === "Penthouse") && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFilters((prev) => ({
+                      ...prev,
+                      amenities: prev.amenities.filter(a => a !== "Pet Friendly" && a !== "Private Gym"),
+                      searchQuery: prev.searchQuery.toLowerCase().trim() === "harbour" ? "" : prev.searchQuery,
+                      type: prev.type === "Penthouse" ? "all" : prev.type
+                    }));
+                  }}
+                  className="text-[9px] font-mono text-zinc-500 hover:text-[#D4AF37] transition-colors cursor-pointer px-2 py-1.5 hover:underline decoration-1"
+                >
+                  Clear presets
+                </button>
+              )}
+            </div>
+          </div>
+
           <AnimatePresence mode="popLayout">
-            {filteredProperties.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+            {isUpdatingPortfolio ? (
+              <LuxuryGridSkeleton key="skeleton-loader" />
+            ) : filteredProperties.length > 0 ? (
+              <motion.div
+                key="listings-grid"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8"
+              >
                 {filteredProperties.map((p) => (
                   <PropertyCard
                     key={p.id}
@@ -424,11 +751,22 @@ export default function App() {
                     isSelected={selectedProperty?.id === p.id}
                     onLocateOnMap={() => handleLocateProperty(p)}
                     onBookShowing={() => setBookingProperty(p)}
+                    onOpenVirtualTour={() => setVirtualTourProperty(p)}
+                    isFavorite={favorites.includes(p.id)}
+                    onToggleFavorite={() => handleToggleFavorite(p.id)}
+                    isComparing={compareIds.includes(p.id)}
+                    onToggleCompare={() => handleToggleCompare(p.id)}
+                    isSubscribed={subscriptions.some((sub) => sub.propertyId === p.id)}
+                    activeSubscription={subscriptions.find((sub) => sub.propertyId === p.id)}
+                    onSubscribe={(email, priceAlert, availAlert) => handleSubscribeUpdate(p.id, email, priceAlert, availAlert)}
+                    onUnsubscribe={() => handleUnsubscribeUpdate(p.id)}
+                    onDirectInquiry={() => handlePropertyInquiry(p)}
                   />
                 ))}
-              </div>
+              </motion.div>
             ) : (
               <motion.div
+                key="empty-state"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -453,11 +791,17 @@ export default function App() {
             )}
           </AnimatePresence>
         </section>
+
+        {/* Elite Client Testimonial Carousel */}
+        <ClientExperiences />
+
+        {/* Brand Price Trends Analytics Suite */}
+        <PriceTrendsChart />
       </main>
 
       {/* Decorative Elegant Footer with humble & premium labels */}
-      <footer className="border-t border-[#D4AF37]/15 bg-black py-10 select-none text-[10px] text-zinc-550 font-mono">
-        <div className="max-w-7xl mx-auto px-6 md:px-12 space-y-6">
+      <footer className="border-t border-[#D4AF37]/15 bg-black py-12 select-none text-[10px] text-zinc-550 font-mono">
+        <div className="max-w-7xl mx-auto px-6 md:px-12 space-y-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-2">
               <div className="w-4 h-4 border border-[#D4AF37] flex items-center justify-center transform rotate-45 shrink-0">
@@ -471,9 +815,44 @@ export default function App() {
               <span className="hover:text-[#D4AF37] cursor-pointer transition-colors">Exclusive Terms of Service</span>
             </div>
           </div>
-          <p className="text-center text-[9px] text-zinc-650 max-w-2xl mx-auto leading-relaxed text-zinc-550">
+
+          <p className="text-center text-[9px] text-zinc-600 max-w-2xl mx-auto leading-relaxed">
             Vantage is an accredited and registered platform for booking fully-furnished luxury corporate housing, estate lofts, and residential penthouses. Content synchronized with our premier private AI database.
           </p>
+
+          {/* Founder & Designer Stamp Block */}
+          <div className="relative max-w-xl mx-auto border border-[#D4AF37]/20 bg-[#080808]/75 p-4 flex flex-col sm:flex-row items-center justify-between gap-4 mt-2 select-text">
+            {/* Geometric accents */}
+            <div className="absolute top-0 right-0 w-1.5 h-1.5 bg-[#D4AF37]/45" />
+            <div className="absolute bottom-0 left-0 w-1.5 h-1.5 bg-[#D4AF37]/45" />
+            
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-black border border-[#D4AF37]/35 flex items-center justify-center text-xs font-serif text-[#D4AF37] select-none shrink-0 tracking-widest">
+                RT
+              </div>
+              <div className="text-left">
+                <span className="text-[8px] tracking-widest text-[#D4AF37]/80 block font-mono uppercase mb-0.5">FOUNDER & CHIEF DESIGNER</span>
+                <span className="text-xs font-serif text-zinc-100 font-bold block uppercase tracking-wider">Rafik Tourki</span>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:items-end text-[9px] font-mono text-zinc-400 gap-1 text-center sm:text-right">
+              <div className="flex flex-col sm:flex-row gap-1 sm:gap-2.5 justify-center">
+                <a href="mailto:rafik.rr@hotmail.com" className="hover:text-[#D4AF37] transition-colors">rafik.rr@hotmail.com</a>
+                <span className="hidden sm:inline text-zinc-800">|</span>
+                <a href="tel:+213672185177" className="hover:text-[#D4AF37] transition-colors">+213 67 218 5177</a>
+              </div>
+              <a 
+                href="https://gini.so/passport/rafik-tourki-30dea4" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="mt-1 inline-flex items-center gap-1.5 bg-[#D4AF37]/10 hover:bg-[#D4AF37] border border-[#D4AF37]/40 text-[#D4AF37] hover:text-black px-2 py-0.5 text-[8px] uppercase tracking-wider transition-all"
+              >
+                <span className="w-1 h-1 bg-[#D4AF37] rounded-none inline-block animate-pulse" />
+                <span>Verified Designer Passport</span>
+              </a>
+            </div>
+          </div>
         </div>
       </footer>
 
@@ -485,6 +864,110 @@ export default function App() {
             isOpen={!!bookingProperty}
             onClose={() => setBookingProperty(null)}
             onSubmit={handleCreateApplication}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Virtual 3D Tour Modal View */}
+      <AnimatePresence>
+        {virtualTourProperty && (
+          <VirtualTourModal
+            property={virtualTourProperty}
+            isOpen={!!virtualTourProperty}
+            onClose={() => setVirtualTourProperty(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Floating Compare Action Deck */}
+      <AnimatePresence>
+        {compareIds.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, x: "-50%" }}
+            animate={{ opacity: 1, y: 0, x: "-50%" }}
+            exit={{ opacity: 0, y: 50, x: "-50%" }}
+            className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40 w-[92%] max-w-lg bg-[#080808]/95 border border-[#D4AF37]/50 p-4 shadow-2xl backdrop-blur-md flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 border border-[#D4AF37]/20 bg-black flex items-center justify-center text-[#D4AF37]">
+                <GitCompare className="w-5 h-5" />
+              </div>
+              <div className="text-left font-mono">
+                <h5 className="text-[10px] font-bold text-[#D4AF37] uppercase tracking-widest leading-none">
+                  Suite Comparator
+                </h5>
+                <p className="text-[9px] text-zinc-400 mt-1 uppercase tracking-wider">
+                  {compareIds.length} of 3 suites selected
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsCompareOpen(true)}
+                disabled={compareIds.length < 2}
+                className={`font-mono text-[9px] uppercase font-bold tracking-widest px-3.5 py-2 transition-all duration-300 ${
+                  compareIds.length >= 2
+                    ? "bg-[#D4AF37] hover:bg-white text-black active:scale-95 cursor-pointer font-bold"
+                    : "bg-zinc-900 border border-zinc-850 text-zinc-550 cursor-not-allowed"
+                }`}
+                title={compareIds.length < 2 ? "Select at least 2 properties to compare side-by-side" : "Open Comparison Interface"}
+              >
+                Compare ({compareIds.length})
+              </button>
+              
+              <button
+                onClick={() => setCompareIds([])}
+                className="p-2 border border-zinc-900 bg-black hover:bg-zinc-900 text-zinc-550 hover:text-rose-400 transition-colors cursor-pointer"
+                title="Reset comparison slots"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Alert / Warnings Notification Panel */}
+      <AnimatePresence>
+        {compareWarning && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, x: "-50%" }}
+            animate={{ opacity: 1, y: 0, x: "-50%" }}
+            exit={{ opacity: 0, y: -20, x: "-50%" }}
+            className="fixed top-24 left-1/2 transform -translate-x-1/2 z-50 w-[90%] max-w-md bg-black border border-rose-500/40 p-3.5 shadow-2xl backdrop-blur-md flex items-start gap-3"
+          >
+            <AlertCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
+            <div className="flex-1 text-left font-mono">
+              <h5 className="text-[9px] text-rose-400 uppercase tracking-widest font-bold">Comparator Notice</h5>
+              <p className="text-[10px] text-zinc-300 mt-1 leading-relaxed font-sans">{compareWarning}</p>
+            </div>
+            <button 
+              onClick={() => setCompareWarning(null)}
+              className="text-zinc-550 hover:text-zinc-300 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Compare side-by-side Modal */}
+      <AnimatePresence>
+        {isCompareOpen && (
+          <CompareModal
+            comparedProperties={comparedPropertiesList}
+            isOpen={isCompareOpen}
+            onClose={() => setIsCompareOpen(false)}
+            onRemoveFromCompare={handleRemoveFromCompare}
+            onBookShowing={(p) => {
+              setIsCompareOpen(false);
+              setBookingProperty(p);
+            }}
+            onOpenVirtualTour={(p) => {
+              setIsCompareOpen(false);
+              setVirtualTourProperty(p);
+            }}
           />
         )}
       </AnimatePresence>
